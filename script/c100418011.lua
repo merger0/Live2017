@@ -12,7 +12,7 @@ function c100418011.initial_effect(c)
 	--spsummon
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(100418011,0))
-	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e2:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_ATKCHANGE)
 	e2:SetType(EFFECT_TYPE_QUICK_O)
 	e2:SetCode(EVENT_FREE_CHAIN)
 	e2:SetRange(LOCATION_SZONE)
@@ -58,7 +58,8 @@ function c100418011.target1(e,tp,eg,ep,ev,re,r,rp,chk)
 	end
 end
 function c100418011.condition(e,tp,eg,ep,ev,re,r,rp)
-	return Duel.GetCurrentPhase()==PHASE_BATTLE
+	local ph=Duel.GetCurrentPhase()
+	return ph>=PHASE_BATTLE_START and ph<=PHASE_BATTLE
 end
 function c100418011.filter(c,e,tp)
 	return c:IsSetCard(0x4) and c:IsCanBeSpecialSummoned(e,0,tp,false,false)
@@ -74,9 +75,14 @@ function c100418011.operation(e,tp,eg,ep,ev,re,r,rp)
 	if e:GetHandler():GetFlagEffect(100418011)==0 or not e:GetHandler():IsRelateToEffect(e) then return end
 	if Duel.GetLocationCount(tp,LOCATION_MZONE)<=0 then return end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectMatchingCard(tp,c100418011.filter,tp,LOCATION_HAND,0,1,1,nil,e,tp)
-	if g:GetCount()>0 then
-		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP)
+	local tc=Duel.SelectMatchingCard(tp,c100418011.filter,tp,LOCATION_HAND,0,1,1,nil,e,tp):GetFirst()
+	if tc and Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)>0 then
+		local e1=Effect.CreateEffect(e:GetHandler())
+		e1:SetType(EFFECT_TYPE_SINGLE)
+		e1:SetCode(EFFECT_UPDATE_ATTACK)
+		e1:SetValue(500)
+		e1:SetReset(RESET_EVENT+0x1fe0000+RESET_PHASE+PHASE_END)
+		tc:RegisterEffect(e1)
 	end
 end
 function c100418011.check(c,tp)
@@ -94,7 +100,7 @@ end
 function c100418011.rmop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=Duel.GetFirstTarget()
 	if tc:IsRelateToEffect(e) then
-		Duel.Remove(g,POS_FACEUP,REASON_EFFECT)
+		Duel.Remove(tc,POS_FACEUP,REASON_EFFECT)
 	end
 end
 function c100418011.spcon(e,tp,eg,ep,ev,re,r,rp)
